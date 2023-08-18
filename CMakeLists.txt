@@ -1,0 +1,80 @@
+# SPDX-FileCopyrightText: 2023 Istituto Italiano di Tecnologia (IIT)
+# SPDX-License-Identifier: BSD-3-Clause
+
+cmake_minimum_required(VERSION 3.16)
+project(yarp-device-template
+        LANGUAGES CXX
+        VERSION 3.8.0)
+
+include(FeatureSummary)
+
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
+
+find_package(YCM 0.15.1 REQUIRED)
+
+include(GNUInstallDirs)
+
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_BINDIR}")
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_LIBDIR}")
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_LIBDIR}")
+
+if(MSVC)
+  set(CMAKE_DEBUG_POSTFIX "d")
+endif()
+
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+
+set(CMAKE_C_EXTENSIONS OFF)
+set(CMAKE_CXX_EXTENSIONS OFF)
+
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
+
+set(YARP_FORCE_DYNAMIC_PLUGINS TRUE CACHE INTERNAL "yarp-devices-ros2 is always built with dynamic plugins")
+option(BUILD_SHARED_LIBS "Build libraries as shared as opposed to static" ON)
+
+find_package(YARP 3.8.0 COMPONENTS os sig dev rosmsg serversql OPTIONAL_COMPONENTS math REQUIRED)
+find_package(YARP 3.8.0 COMPONENTS catch2 dev_tests QUIET)
+
+if(YARP_catch2_FOUND AND YARP_dev_tests_FOUND)
+  option(YARP_COMPILE_TESTS "Enable YARP tests" OFF)
+  if(YARP_COMPILE_TESTS)
+    enable_testing()
+  endif()
+  message (STATUS "yarp_catch2 and yarp_dev_tests libraries found")
+else()
+  SET(YARP_COMPILE_TESTS OFF CACHE BOOL "yarp_catch2 and yarp_dev_tests libraries NOT found. Tests cannot be enabled" FORCE)
+  message (STATUS "yarp_catch2 and yarp_dev_tests libraries NOT found. Tests cannot be enabled")
+endif()
+
+include(YarpValgrindOptions)
+
+include(AddInstallRPATHSupport)
+add_install_rpath_support(BIN_DIRS "${CMAKE_INSTALL_FULL_BINDIR}"
+                          LIB_DIRS "${CMAKE_INSTALL_FULL_LIBDIR}"
+                          INSTALL_NAME_DIR "${CMAKE_INSTALL_FULL_LIBDIR}"
+                          USE_LINK_PATH)
+
+if(NOT CMAKE_CONFIGURATION_TYPES)
+    if(NOT CMAKE_BUILD_TYPE)
+        message(STATUS "Setting build type to 'Release' as none was specified.")
+        set_property(CACHE CMAKE_BUILD_TYPE PROPERTY VALUE "Release")
+    endif()
+endif()
+
+set_property(GLOBAL PROPERTY USE_FOLDERS 1)
+
+include(AddUninstallTarget)
+
+set(CMAKE_C_FLAGS "${YARP_C_FLAGS} ${CMAKE_C_FLAGS}")
+set(CMAKE_CXX_FLAGS "${YARP_CXX_FLAGS} ${CMAKE_CXX_FLAGS}")
+
+yarp_configure_plugins_installation(${PROJECT_NAME})
+yarp_configure_external_installation(${PROJECT_NAME})
+
+find_package(Doxygen)
+
+add_subdirectory(src)
+#add_subdirectory(doc)
+add_subdirectory(tests)
+
+feature_summary(WHAT ALL INCLUDE_QUIET_PACKAGES)
