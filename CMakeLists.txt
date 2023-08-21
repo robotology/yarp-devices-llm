@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 cmake_minimum_required(VERSION 3.16)
-project(yarp-device-template
+project(yarp-devices-llm
         LANGUAGES CXX
         VERSION 3.8.0)
 
@@ -73,6 +73,7 @@ yarp_configure_external_installation(${PROJECT_NAME})
 
 find_package(Doxygen)
 
+set(LIBOAI_INSTALL_PATH "" ON CACHE PATH "Installation path to liboai (needed for GPTDevice)")
 add_subdirectory(src)
 #add_subdirectory(doc)
 add_subdirectory(tests)
