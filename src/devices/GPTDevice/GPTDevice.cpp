@@ -13,17 +13,18 @@ bool GPTDevice::open(yarp::os::Searchable &config)
     azure_deployment_id = std::getenv("DEPLOYMENT_ID");
     azure_resource = std::getenv("AZURE_RESOURCE");
 
-    // if(!azure_resource)
-    // {
-    //     yError() << "Could not read env variable AZURE_RESOURCE, please provide it";
-    //     return false;
-    // }
+    if (!azure_resource)
+    {
+        yWarning() << "Could not read env variable AZURE_RESOURCE. Device set in offline mode";
+        m_offline = true;
+        return true;
+    }
 
-    // if(!oai.auth.SetAzureKeyEnv("AZURE_API_KEY"))
-    // {
-    //     yError() << "Invalid azure key provided";
-    //     return false;
-    // }
+    if (!oai.auth.SetAzureKeyEnv("AZURE_API_KEY"))
+    {
+        yWarning() << "Invalid or no azure key provided. Device set in offline mode.";
+        m_offline = true;
+    }
 
     return true;
 }
@@ -32,6 +33,12 @@ bool GPTDevice::ask(const std::string &question, std::string &oAnswer)
 {
     // Adding prompt to conversation
     m_convo->AddUserData(question);
+
+    if (m_offline)
+    {
+        yWarning() << "Device in offline mode";
+        return false;
+    }
 
     // Asking gpt for an answer
     try

@@ -14,7 +14,7 @@ class GPTDevice : public yarp::dev::ILLM,
                   public yarp::dev::DeviceDriver
 {
 public:
-    GPTDevice() : ILLM(), m_convo{std::make_unique<liboai::Conversation>()}
+    GPTDevice() : ILLM(), m_convo{std::make_unique<liboai::Conversation>()}, m_offline{false}
     {
     }
 
@@ -46,10 +46,13 @@ private:
     std::unique_ptr<liboai::Conversation> m_convo;
 
     // configuration
-    char* azure_resource;
-    char* azure_deployment_id;
+    char *azure_resource;
+    char *azure_deployment_id;
     std::string azure_api_version;
     liboai::OpenAI oai;
+
+    // offline mode for testing purpouses
+    bool m_offline;
 
     // model
     std::string m_model;

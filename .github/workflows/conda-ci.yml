@@ -100,6 +100,27 @@ jobs:
         cmake --build . --config ${{ matrix.build_type }}
         cmake --install . --config ${{ matrix.build_type }}
         echo "YARP_DATA_DIRS=${CONDA_PREFIX}/share/yarp::${YARP_DATA_DIRS}" >> $GITHUB_ENV
+        # libaoi dependencies
+        cd ${GITHUB_WORKSPACE}
+        git clone https://github.com/Microsoft/vcpkg.git
+        cd vcpkg 
+        ./bootstrap-vcpkg.sh -disableMetrics
+        ./vcpkg integrate install
+        ./vcpkg install curl
+        ./vcpkg install nlohmann-json
+        #liboai
+        cd ${GITHUB_WORKSPACE}
+        git clone https://github.com/D7EAD/liboai.git
+        cd liboai/liboai
+        mkdir build
+        cd build
+        cmake -GNinja -DCMAKE_INSTALL_PREFIX=${CONDA_PREFIX} \
+                      -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} \
+                      -DCMAKE_TOOLCHAIN_FILE=${GITHUB_WORKSPACE}/vcpkg/scripts/buildsystems/vcpkg.cmake \
+                      -DCMAKE_POSITION_INDEPENDENT_CODE=true ..
+        cmake --build . --config ${{ matrix.build_type }}
+        cmake --install . --config ${{ matrix.build_type }}
+
 
     - name: Dependencies from source [Windows]
       if: contains(matrix.os, 'windows')
@@ -117,6 +138,26 @@ jobs:
         cmake --build . --config ${{ matrix.build_type }}
         cmake --install . --config ${{ matrix.build_type }}
         echo "YARP_DATA_DIRS=${CONDA_PREFIX}/Library/share/yarp;${YARP_DATA_DIRS}" >> $GITHUB_ENV
+        # libaoi dependencies
+        cd ${GITHUB_WORKSPACE}
+        git clone https://github.com/Microsoft/vcpkg.git
+        cd vcpkg 
+        ./bootstrap-vcpkg.sh -disableMetrics
+        ./vcpkg integrate install
+        ./vcpkg install curl
+        ./vcpkg install nlohmann-json
+        #liboai
+        cd ${GITHUB_WORKSPACE}
+        git clone https://github.com/D7EAD/liboai.git
+        cd liboai/liboai
+        mkdir build
+        cd build
+        cmake -G"Visual Studio 16 2019" -DCMAKE_INSTALL_PREFIX=${CONDA_PREFIX}/Library \
+                                        -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} .. \
+                                        -DCMAKE_TOOLCHAIN_FILE=${GITHUB_WORKSPACE}/vcpkg/scripts/buildsystems/vcpkg.cmake \
+                                        -DCMAKE_POSITION_INDEPENDENT_CODE=true ..
+        cmake --build . --config ${{ matrix.build_type }}
+        cmake --install . --config ${{ matrix.build_type }}
 
     - name: Configure [Linux&macOS]
       if: contains(matrix.os, 'macos') || contains(matrix.os, 'ubuntu')
@@ -128,6 +169,8 @@ jobs:
                       -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} \
                       -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} \
                       -DCMAKE_INSTALL_PREFIX=${CONDA_PREFIX} .. \
+                      -DCMAKE_TOOLCHAIN_FILE=${GITHUB_WORKSPACE}/vcpkg/scripts/buildsystems/vcpkg.cmake \
+                      -DLIBOAI_INSTALL_PATH=${GITHUB_WORKSPACE}/liboai \
                       -DYARP_COMPILE_TESTS:BOOL=ON
 
     - name: Configure [Windows]
@@ -139,6 +182,8 @@ jobs:
         cmake -G"Visual Studio 16 2019" -DBUILD_TESTING:BOOL=ON ^
                                         -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} ^
                                         -DCMAKE_INSTALL_PREFIX=${CONDA_PREFIX}\Library .. ^
+                                        -DCMAKE_TOOLCHAIN_FILE=${GITHUB_WORKSPACE}/vcpkg/scripts/buildsystems/vcpkg.cmake ^
+                                        -DLIBOAI_INSTALL_PATH=${GITHUB_WORKSPACE}/liboai ^
                                         -DYARP_COMPILE_TESTS:BOOL=ON
 
     - name: Build [Linux&macOS]
@@ -231,6 +276,22 @@ jobs:
         cmake --build . --config ${{ matrix.build_type }}
         cmake --install . --config ${{ matrix.build_type }}
         echo "YARP_DATA_DIRS=${CONDA_PREFIX}/share/yarp::${YARP_DATA_DIRS}" >> $GITHUB_ENV
+        # libaoi dependencies
+        cd ${GITHUB_WORKSPACE}
+        git clone https://github.com/Microsoft/vcpkg.git
+        cd vcpkg 
+        ./bootstrap-vcpkg.sh -disableMetrics
+        ./vcpkg integrate install
+        ./vcpkg install curl
+        ./vcpkg install nlohmann-json
+        #liboai
+        cd ${GITHUB_WORKSPACE}
+        git clone https://github.com/D7EAD/liboai.git
+        cd liboai/liboai
+        cmake --build . --config ${{ matrix.build_type }} \
+        -DCMAKE_TOOLCHAIN_FILE=${GITHUB_WORKSPACE}/vcpkg/scripts/buildsystems/vcpkg.cmake \
+        -DCMAKE_POSITION_INDEPENDENT_CODE=true \
+        cmake --install . --config ${{ matrix.build_type }}  
 
     - name: Configure [Linux&macOS]
       if: contains(matrix.os, 'macos') || contains(matrix.os, 'ubuntu')
@@ -242,6 +303,8 @@ jobs:
                       -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} \
                       -DYARP_VALGRIND_TESTS:BOOL=ON \
                       -DCMAKE_INSTALL_PREFIX=${CONDA_PREFIX} .. \
+                      -DCMAKE_TOOLCHAIN_FILE=${GITHUB_WORKSPACE}/scripts/buildsystems/vcpkg.cmake \
+                      -DLIBOAI_INSTALL_PATH=${GITHUB_WORKSPACE}/liboai \
                       -DYARP_COMPILE_TESTS:BOOL=ON
 
     - name: Build [Linux&macOS]

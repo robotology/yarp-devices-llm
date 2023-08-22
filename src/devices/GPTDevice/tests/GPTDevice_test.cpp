@@ -48,7 +48,9 @@ TEST_CASE("dev::GPTDevice_test", "[yarp::dev]")
             ret = illm->readPrompt(out_prompt);
             CHECK(out_prompt == prompt);
 
-            //TODO: add illm->ask test without accessing internet
+            std::string answer;
+            ret = illm->ask("This is a question",answer);
+            CHECK(!ret); //If the device is offline ask will not work
 
             std::vector<std::pair<Author,Content>> out_conversation;
             ret = illm->getConversation(out_conversation);
