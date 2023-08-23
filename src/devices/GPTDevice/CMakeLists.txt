@@ -19,6 +19,20 @@ if(NOT SKIP_GPTDevice)
       GPTDevice.h
   )
 
+  cmake_path(SET LIBOAI_INCLUDE_PATH "${LIBOAI_INSTALL_PATH}/liboai/include")
+  cmake_path(SET LIBOAI_LIBRARY_PATH "${LIBOAI_INSTALL_PATH}/liboai/build/Release")
+
+  target_link_directories(yarp_GPTDevice
+   PUBLIC
+    "${LIBOAI_LIBRARY_PATH}"
+  )
+
+  target_include_directories(yarp_GPTDevice
+  PUBLIC
+    "${LIBOAI_INCLUDE_PATH}"
+    "${CMAKE_CURRENT_SOURCE_DIR}"
+  )
+
   target_link_libraries(yarp_GPTDevice
     PRIVATE
       YARP::YARP_os
@@ -26,12 +40,6 @@ if(NOT SKIP_GPTDevice)
       YARP::YARP_dev
       oai
       CURL::libcurl
-  )
-
-  target_include_directories(yarp_GPTDevice
-    PUBLIC
-      "${LIBOAI_INSTALL_PATH}/liboai/include"
-      "${CMAKE_CURRENT_SOURCE_DIR}"
   )
 
   yarp_install(

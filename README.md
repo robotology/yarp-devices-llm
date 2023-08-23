@@ -1,21 +1,14 @@
-![YARP logo](doc/images/yarp-robot-24.png?raw=true "yarp-devices-llm")
+![YARP logo](https://github.com/robotology/yarp/raw/master/doc/images/yarp-robot-24.png?raw=true)
 Yarp devices for Large Language Models
 =====================
 
 This repository contains the YARP plugin for Large Language Models.
 
-:construction: This repository is currently work in progress.
-
-:construction: The software contained is this repository is currently under testing. 
-
-:construction: APIs may change without any warning.
- 
-:construction: This code should be not used before its first official release
-
 Documentation
 -------------
 
 Documentation of the individual devices is provided in the official Yarp documentation page:
+
 [![YARP documentation](https://img.shields.io/badge/Documentation-yarp.it-19c2d8.svg)](https://yarp.it/latest/group__dev__impl.html)
 
 Prerequisites
@@ -78,6 +71,38 @@ source .env
 set +a
 ```
 
+Usage
+---------
+
+Assuming that the user has already installed [YARP](https://www.github.com/robotology/yarp) and the related LLM devices, one can use this basic configuration example
+
+~~~
+yarpserver
+~~~
+
+~~~
+set -a
+source .env
+set +a
+yarprobotinterface --from assets/LLMDeviceExample.xml
+~~~
+
+~~~
+yarp rpc /yarpgpt/rpc
+>>help
+Responses:
+  *** Available commands:
+  setPrompt
+  readPrompt
+  ask
+  getConversation
+  deleteConversation
+  help
+>>setPrompt "You are a geography expert who is very concise in its answers"
+Response: [ok]
+>>ask "What is the capital of Italy?"
+Response: [ok] Rome. #This answer may vary in the form, hopefully not in the content.
+~~~
 CI Status
 ---------
 
@@ -86,6 +111,9 @@ CI Status
 License
 ---------
 
+[![License](https://img.shields.io/badge/License-BSD_3--Clause-blue.svg)](https://opensource.org/licenses/BSD-3-Clause)
+
+This software is distributed under the terms of the BSD-3-Clause.
 
 
 Maintainers
