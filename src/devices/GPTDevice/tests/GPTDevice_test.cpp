@@ -48,6 +48,11 @@ TEST_CASE("dev::GPTDevice_test", "[yarp::dev]")
             ret = illm->readPrompt(out_prompt);
             CHECK(out_prompt == prompt);
 
+            //Since a prompt is already set you cannot set another one
+            //The user is expected to delete the conversation before starting a new one.
+            ret = illm->setPrompt(prompt);
+            CHECK(!ret);
+
             std::string answer;
             ret = illm->ask("This is a question",answer);
             CHECK(!ret); //If the device is offline ask will not work

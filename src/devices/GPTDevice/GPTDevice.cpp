@@ -60,9 +60,17 @@ bool GPTDevice::ask(const std::string &question, std::string &oAnswer)
 
 bool GPTDevice::setPrompt(const std::string &prompt)
 {
+
+    std::string aPrompt;
+
+    if(readPrompt(aPrompt))
+    {
+        yError() << "A prompt is already set. You must delete conversation first";
+        return false;
+    }
+
     try
     {
-        m_convo->PopSystemData();
         m_convo->SetSystemData(prompt);
     }
     catch (const std::exception &e)

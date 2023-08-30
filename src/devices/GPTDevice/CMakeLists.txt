@@ -20,16 +20,17 @@ if(NOT SKIP_GPTDevice)
   )
 
   cmake_path(SET LIBOAI_INCLUDE_PATH "${LIBOAI_INSTALL_PATH}/liboai/include")
-  cmake_path(SET LIBOAI_LIBRARY_PATH "${LIBOAI_INSTALL_PATH}/liboai/build/Release")
+  # cmake_path(SET LIBOAI_LIBRARY_PATH "${LIBOAI_INSTALL_PATH}/liboai/build/Release")
 
   target_link_directories(yarp_GPTDevice
    PUBLIC
-    "${LIBOAI_LIBRARY_PATH}"
+    ${CMAKE_PREFIX_PATH}/lib
   )
 
   target_include_directories(yarp_GPTDevice
   PUBLIC
     "${LIBOAI_INCLUDE_PATH}"
+    ${CMAKE_PREFIX_PATH}/include
     "${CMAKE_CURRENT_SOURCE_DIR}"
   )
 
