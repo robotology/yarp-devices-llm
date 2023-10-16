@@ -3,4 +3,4 @@
 
 #!/bin/bash
 
-docker run --privileged --network host --pid host --rm -it fbrand-new/yarp-devices-llm:latest bash
+docker run --privileged --network host --pid host --rm -it -v /usr/local/src/robotology/yarp-devices-llm/.env:/home/user/yarp-devices-llm/.env fbrand-new/yarp-devices-llm:latest bash

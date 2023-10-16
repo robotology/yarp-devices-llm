@@ -40,6 +40,7 @@ RUN git clone https://github.com/robotology/ycm.git && mkdir robotology && mv yc
     && cd build && cmake .. && make && sudo make install && \
     rm -rf /ycm
 
+ENV PYTHONPATH=/usr/local/lib/python3/dist-packages
 # Install yarp
 RUN cd robotology && git clone https://github.com/robotology/yarp.git \
 	&& cd yarp && mkdir build && cd build \ 
@@ -64,8 +65,8 @@ RUN git clone https://github.com/D7EAD/liboai.git && \
 # Install yarpGPT
 COPY --chown=user:user . /home/user/yarp-devices-llm
 
-RUN cd /home/user/yarp-devices-llm && \
-    cmake -B build -S . \
-    -DCMAKE_TOOLCHAIN_FILE=/home/user/vcpkg/scripts/buildsystems/vcpkg.cmake \
-    -DLIBOAI_INSTALL_PATH=/home/user/liboai && cd build && \ 
-    sudo make install -j8
+# RUN cd /home/user/yarp-devices-llm && \
+#     cmake -B build -S . \
+#     -DCMAKE_TOOLCHAIN_FILE=/home/user/vcpkg/scripts/buildsystems/vcpkg.cmake \
+#     -DLIBOAI_INSTALL_PATH=/home/user/liboai && cd build && \ 
+#     sudo make install -j8
