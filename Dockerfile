@@ -62,11 +62,17 @@ RUN git clone https://github.com/D7EAD/liboai.git && \
     -DCMAKE_POSITION_INDEPENDENT_CODE=true && \
     cd build && make -j8 && sudo make install
 
+# Configure openai credentials
+RUN echo "set -a" >> /home/user/.bashrc &&
+    echo "source ~/.env/config.env" >> /home/user/.bashrc &&
+    echo "set +a" >> /home/user/.bashrc
+    
 # Install yarpGPT
 COPY --chown=user:user . /home/user/yarp-devices-llm
 
-# RUN cd /home/user/yarp-devices-llm && \
+RUN cd /home/user/yarp-devices-llm && \
     cmake -B build -S . \
     -DCMAKE_TOOLCHAIN_FILE=/home/user/vcpkg/scripts/buildsystems/vcpkg.cmake \
     -DLIBOAI_INSTALL_PATH=/home/user/liboai && cd build && \ 
     sudo make install -j8
+
