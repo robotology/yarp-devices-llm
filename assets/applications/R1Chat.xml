@@ -3,7 +3,21 @@
 
     <module>
         <name>yarprobotinterface</name>
-        <parameters>--config LLMDevice.xml</parameters>
+        <parameters>--config yarp_audio_from_mic.xml</parameters>
+        <workdir>/home/r1-user</workdir>
+        <node>r1-torso</node>
+    </module>
+
+    <module>
+        <name>yarprobotinterface</name>
+        <parameters>--context whisperTranscribe_demo --config yarp_transcribe.xml --model ggml-small3.it.bin</parameters>
+        <workdir>/usr/local/src/robot/yarp-device-speechTranscription-whisper/build/share/WhisperTranscribe/contexts/whisperTranscribe_demo</workdir>
+        <node>node</node>
+    </module>
+
+    <module>
+        <name>yarprobotinterface</name>
+        <parameters>--config assets/LLMDevice.xml</parameters>
         <node>/container-llm</node>
     </module>
 
@@ -12,6 +26,25 @@
         <node>/container-llm</node>
     </module>
     
+    <module>
+        <name>yarprobotinterface</name>
+        <parameters>--from testSpeech.ini</parameters>
+        <workdir>/home/yarp-user/robotology/yarp-devices-google-cloud/build/share/yarp/context/googleTest</workdir>
+        <node>/console1</node>
+    </module>
+
+    <module>
+        <name>yarprobotinterface</name>
+        <parameters>--context vadModule --from audioPlayer.ini</parameters>
+        <node>r1-face</node>
+    </module>
+
+    <connection>
+        <from>/audioRecorder_nws/audio:o</from>
+        <to>/speechTranscription_nws/sound:i</to>
+        <protocol>fast_tcp</protocol>
+    </connection>
+    
     <connection>
         <from>/speechTranscription_nws/text:o</from>
         <to>/LLMStream/text:i</to>
@@ -19,7 +52,15 @@
     </connection>
 
     <connection>
-        <from>/llm/conv:o</from>
-        <to>/googleSynthesis/text:i</to>
+        <from>/LLMStream/text:o</from>
+        <to>/speechSynthesizer_nws/text:i</to>
         <protocol>fast_tcp</protocol>
+    </connection>
+
+    <connection>
+        <from>/speechSynthesizer_nws/sound:o</from>
+        <to>/audioPlayerWrapper/audio:i</to>
+        <protocol>fast_tcp</protocol>
+    </connection>
+
 </application>

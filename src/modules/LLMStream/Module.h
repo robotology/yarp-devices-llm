@@ -17,6 +17,7 @@ class Module : public yarp::os::RFModule
     private:
         
         yarp::os::BufferedPort<yarp::os::Bottle> question_port_;
+        yarp::os::BufferedPort<yarp::os::Bottle> answer_port_;
         yarp::dev::PolyDriver drv_;
         yarp::dev::ILLM* illm_;
 };

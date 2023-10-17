@@ -3,11 +3,12 @@
 bool Module::configure(yarp::os::ResourceFinder& rf)
 {
     // Opening the llm nwc
+    std::string remote_rpc = rf.check("remote",yarp::os::Value("/LLM_nws/rpc")).asString();
 
     yarp::os::Property prop;
     prop.put("device","LLM_nwc_yarp");
     prop.put("local","/LLM_nwc/rpc");
-    prop.put("remote","/yarpgpt/rpc");
+    prop.put("remote",remote_rpc);
 
     if(!drv_.open(prop))
     {
@@ -21,9 +22,11 @@ bool Module::configure(yarp::os::ResourceFinder& rf)
         return EXIT_FAILURE;
     }
 
-    std::string question_port_name = rf.check("text_port",yarp::os::Value("/LLMStream/text:i")).asString();
+    std::string question_port_name = rf.check("in_port",yarp::os::Value("/LLMStream/text:i")).asString();
     question_port_.open(question_port_name);
 
+    std::string answer_port_name = rf.check("out_port",yarp::os::Value("/LLMStream/text:o")).asString();
+    answer_port_.open(answer_port_name);
 
     return true;
 }
@@ -40,7 +43,10 @@ bool Module::updateModule()
         std::string answer;
         illm_->ask(question->toString(),answer);
 
-        // yDebug() << answer;
+        auto& res = answer_port_.prepare();
+        res.clear();
+        res.addString(answer);
+        answer_port_.write();
     }
 
     return true;
@@ -50,12 +56,14 @@ bool Module::interruptModule()
 {
     drv_.close();
     question_port_.interrupt();
+    answer_port_.interrupt();
     return true;
 }
 
 bool Module::close()
 {
     question_port_.close();
+    answer_port_.close();
     drv_.close();
     return true;
 }
