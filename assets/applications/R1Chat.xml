@@ -1,0 +1,25 @@
+<application>
+<name>R1-ChatGPT</name>
+
+    <module>
+        <name>yarprobotinterface</name>
+        <parameters>--config LLMDevice.xml</parameters>
+        <node>/container-llm</node>
+    </module>
+
+    <module>
+        <name>LLMStream</name>
+        <node>/container-llm</node>
+    </module>
+    
+    <connection>
+        <from>/speechTranscription_nws/text:o</from>
+        <to>/LLMStream/text:i</to>
+        <protocol>fast_tcp</protocol>
+    </connection>
+
+    <connection>
+        <from>/llm/conv:o</from>
+        <to>/googleSynthesis/text:i</to>
+        <protocol>fast_tcp</protocol>
+</application>

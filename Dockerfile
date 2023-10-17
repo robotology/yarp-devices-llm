@@ -65,8 +65,8 @@ RUN git clone https://github.com/D7EAD/liboai.git && \
 # Install yarpGPT
 COPY --chown=user:user . /home/user/yarp-devices-llm
 
-# RUN cd /home/user/yarp-devices-llm && \
-#     cmake -B build -S . \
-#     -DCMAKE_TOOLCHAIN_FILE=/home/user/vcpkg/scripts/buildsystems/vcpkg.cmake \
-#     -DLIBOAI_INSTALL_PATH=/home/user/liboai && cd build && \ 
-#     sudo make install -j8
+RUN cd /home/user/yarp-devices-llm && \
+    cmake -B build -S . \
+    -DCMAKE_TOOLCHAIN_FILE=/home/user/vcpkg/scripts/buildsystems/vcpkg.cmake \
+    -DLIBOAI_INSTALL_PATH=/home/user/liboai && cd build && \ 
+    sudo make install -j8

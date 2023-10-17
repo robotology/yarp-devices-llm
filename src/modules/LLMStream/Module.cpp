@@ -21,7 +21,7 @@ bool Module::configure(yarp::os::ResourceFinder& rf)
         return EXIT_FAILURE;
     }
 
-    std::string question_port_name = rf.check("text_port",yarp::os::Value("/speechTranslate/text:i")).asString();
+    std::string question_port_name = rf.check("text_port",yarp::os::Value("/LLMStream/text:i")).asString();
     question_port_.open(question_port_name);
 
 
