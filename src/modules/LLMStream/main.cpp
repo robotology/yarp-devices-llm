@@ -1,3 +1,8 @@
+/*
+ * SPDX-FileCopyrightText: 2023 Istituto Italiano di Tecnologia (IIT)
+ * SPDX-License-Identifier: BSD-3-Clause
+ */
+
 #include "Module.h"
 
 int main(int argc, char** argv)
@@ -8,11 +13,11 @@ int main(int argc, char** argv)
     rf.configure(argc,argv);
 
     Module module;
-    
+
     if(!module.runModule(rf))
     {
         yError() << "Cannot run the module";
         return EXIT_FAILURE;
     }
-    
+
 }

@@ -41,12 +41,13 @@ RUN git clone https://github.com/robotology/ycm.git && mkdir robotology && mv yc
     rm -rf /ycm
 
 ENV PYTHONPATH=/usr/local/lib/python3/dist-packages
+
 # Install yarp
 RUN cd robotology && git clone https://github.com/robotology/yarp.git \
-	&& cd yarp && mkdir build && cd build \ 
+    && cd yarp && mkdir build && cd build \ 
     && cmake -D ENABLE_yarpcar_mjpeg=ON -D ENABLE_yarpmod_ffmpeg_grabber=ON \
         -D YARP_COMPILE_BINDINGS=ON -D CREATE_PYTHON=ON .. \
-	&& make -j8 && sudo make install && \
+    && make -j8 && sudo make install && \
     rm -rf /yarp
 
 # Install openai c++ dependencies
@@ -63,14 +64,15 @@ RUN git clone https://github.com/D7EAD/liboai.git && \
     cd build && make -j8 && sudo make install
 
 # Configure openai credentials
-RUN echo "set -a" >> /home/user/.bashrc &&
-    echo "source ~/.env/config.env" >> /home/user/.bashrc &&
+RUN echo "set -a" >> /home/user/.bashrc && \
+    echo "source ~/.env/config.env" >> /home/user/.bashrc && \
     echo "set +a" >> /home/user/.bashrc
     
 # Install yarpGPT
 COPY --chown=user:user . /home/user/yarp-devices-llm
 
 RUN cd /home/user/yarp-devices-llm && \
+    rm -rf build && \
     cmake -B build -S . \
     -DCMAKE_TOOLCHAIN_FILE=/home/user/vcpkg/scripts/buildsystems/vcpkg.cmake \
     -DLIBOAI_INSTALL_PATH=/home/user/liboai && cd build && \ 

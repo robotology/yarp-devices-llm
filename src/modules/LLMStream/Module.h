@@ -1,3 +1,8 @@
+/*
+ * SPDX-FileCopyrightText: 2023 Istituto Italiano di Tecnologia (IIT)
+ * SPDX-License-Identifier: BSD-3-Clause
+ */
+
 #ifndef MODULE_H
 #define MODULE_H
 
@@ -13,9 +18,9 @@ class Module : public yarp::os::RFModule
         bool close() override;
         bool interruptModule() override;
         double getPeriod() override;
-    
+
     private:
-        
+
         yarp::os::BufferedPort<yarp::os::Bottle> question_port_;
         yarp::os::BufferedPort<yarp::os::Bottle> answer_port_;
         yarp::dev::PolyDriver drv_;
