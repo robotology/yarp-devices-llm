@@ -9,6 +9,7 @@ yarp_prepare_plugin(GPTDevice
 )
 
 find_package(CURL)
+find_package(nlohmann_json CONFIG REQUIRED)
 
 if(NOT SKIP_GPTDevice)
   yarp_add_plugin(yarp_GPTDevice)
@@ -41,6 +42,7 @@ if(NOT SKIP_GPTDevice)
       YARP::YARP_dev
       oai
       CURL::libcurl
+      nlohmann_json::nlohmann_json
   )
 
   yarp_install(
@@ -57,4 +59,8 @@ if(NOT SKIP_GPTDevice)
   endif()
 
   set_property(TARGET yarp_GPTDevice PROPERTY FOLDER "Plugins/Device")
+
+  message("YARP contexts install dir", ${YARP_CONTEXTS_INSTALL_DIR})
+  install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/assets/prompts/ DESTINATION ${YARP_CONTEXTS_INSTALL_DIR}/GPTDevice)
+  install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/assets/functions/ DESTINATION ${YARP_CONTEXTS_INSTALL_DIR}/GPTDevice)
 endif()

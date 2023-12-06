@@ -5,6 +5,13 @@
 
 #include <GPTDevice.h>
 #include <yarp/os/LogStream.h>
+#include <yarp/os/ResourceFinder.h>
+#include <filesystem>
+#include <fstream>
+// #include <nlohmann/json.hpp>
+
+namespace fs = std::filesystem;
+using json = nlohmann::json;
 
 bool GPTDevice::open(yarp::os::Searchable &config)
 {
@@ -24,6 +31,54 @@ bool GPTDevice::open(yarp::os::Searchable &config)
     {
         yWarning() << "Invalid or no azure key provided. Device set in offline mode.";
         m_offline = true;
+    }
+
+    // Prompt and functions file
+    bool has_prompt_file{config.check("prompt_file")};
+    yarp::os::ResourceFinder resource_finder;
+    resource_finder.setDefaultContext("GPTDevice");
+
+    if(has_prompt_file)
+    {    
+        std::string prompt_file_fullpath = resource_finder.findFile(config.find("prompt_file").asString());
+        auto stream = std::ifstream(prompt_file_fullpath);
+        if (not stream)
+        {
+            yWarning() << "File:" << prompt_file_fullpath << "does not exist or path is invalid";
+        }
+        else
+        {
+            std::ostringstream sstr;
+            sstr << stream.rdbuf(); //Reads the entire file into the stringstream
+            yDebug() << "THE PROMPT:" << sstr.str();
+            // TODO: uncomment me once done
+            // if( not setPrompt(sstr.str()))
+            // {
+            //     return false;
+            // }
+        } 
+    }
+
+    bool has_function_file{config.check("functions_file")};
+    if(has_function_file)
+    {
+        std::string functions_file_fullpath = resource_finder.findFile(config.find("functions_file").asString());
+        auto stream = std::ifstream(functions_file_fullpath);
+        if (not stream)
+        {
+            yWarning() << "File: " << functions_file_fullpath << "does not exist or path is invalid.";
+        }
+        else
+        {
+            // Read the function file into json format
+            // yDebug() << functions_file_fullpath;
+            json function_js = json::parse(stream); 
+            // TODO: uncomment me once done
+            if (not setFunctions(function_js))
+            {
+                return false;
+            }
+        }
     }
 
     return true;
@@ -94,8 +149,6 @@ bool GPTDevice::readPrompt(std::string &oPrompt)
         }
     }
 
-    yWarning() << "No system message was found. Set it with setPrompt(string)";
-
     return false;
 }
 
@@ -132,5 +185,41 @@ bool GPTDevice::deleteConversation() noexcept
 
 bool GPTDevice::close()
 {
+    return true;
+}
+
+bool GPTDevice::setFunctions(const json& function_json)
+{
+    
+    for (auto& function: function_json.items())
+    {
+        if(!function.value().contains("name") || !function.value().contains("description"))
+        {
+            yError() << "Function missing mandatory parameters <name> and/or <description>";
+            return false;
+        }
+
+        std::string function_name = function.value()["name"].template get<std::string>();
+        std::string function_desc = function.value()["description"].template get<std::string>();
+        m_functions->AddFunction(function_name);
+        m_functions->SetDescription(function_name,function_desc);
+
+        if(function.value().contains("parameters"))
+        {
+            auto parameters = function.value()["parameters"]["properties"];
+            for(auto& params: parameters.items())
+            {
+                std::cout << params.value();
+                liboai::Functions::FunctionParameter param;
+                param.name = params.key();
+                param.description = params.value()["description"];
+                param.type = params.value()["type"];
+                m_functions->AppendParameters(function_name,param);
+            }
+        }
+    }
+
+    m_convo->SetFunctions(*m_functions);
+
     return true;
 }

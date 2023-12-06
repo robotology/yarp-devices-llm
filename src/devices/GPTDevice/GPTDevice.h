@@ -8,13 +8,19 @@
 
 #include <yarp/dev/ILLM.h>
 #include <yarp/dev/DeviceDriver.h>
+
 #include <liboai.h>
+#include <nlohmann/json.hpp>
+
+using json = nlohmann::json;
 
 class GPTDevice : public yarp::dev::ILLM,
                   public yarp::dev::DeviceDriver
 {
 public:
-    GPTDevice() : ILLM(), m_convo{std::make_unique<liboai::Conversation>()}, m_offline{false}
+    GPTDevice() : ILLM(), m_convo{std::make_unique<liboai::Conversation>()}, 
+                            m_functions{std::make_unique<liboai::Functions>()},
+                            m_offline{false}
     {
     }
 
@@ -44,6 +50,8 @@ public:
 private:
     // data
     std::unique_ptr<liboai::Conversation> m_convo;
+    // functions
+    std::unique_ptr<liboai::Functions> m_functions;
 
     // configuration
     char *azure_resource;
@@ -56,6 +64,9 @@ private:
 
     // model
     std::string m_model;
+
+    // sets OpenAI function
+    bool setFunctions(const json& function_json);
 };
 
 #endif // YARP_GPTDevice_H
