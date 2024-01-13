@@ -45,12 +45,14 @@ bool Module::updateModule()
             yError() << "Interface ILLM not set, aborting";
         }
 
-        std::string answer;
+        yarp::dev::LLM_Message answer;
         illm_->ask(question->toString(),answer);
 
         auto& res = answer_port_.prepare();
         res.clear();
-        res.addString(answer);
+        res.copyPortable(answer,res);
+        // res.add(answer);
+        // res.addString(answer);
         answer_port_.write();
     }
 

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Istituto Italiano di Tecnologia (IIT)
+ * SPDX-FileCopyrightText: 2023-2024 Istituto Italiano di Tecnologia (IIT)
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
@@ -7,19 +7,27 @@
 #define YARP_GPTDevice_H
 
 #include <yarp/dev/ILLM.h>
+#include <yarp/dev/LLM_Message.h>
 #include <yarp/dev/DeviceDriver.h>
 
 #include <liboai.h>
 #include <nlohmann/json.hpp>
+#include <map>
 
 using json = nlohmann::json;
+
+using Question = std::string;
+using Answer = yarp::dev::LLM_Message;
+// using Answer = std::tuple<std::string,std::vector<std::string>,std::vector<std::string>>;
 
 class GPTDevice : public yarp::dev::ILLM,
                   public yarp::dev::DeviceDriver
 {
 public:
-    GPTDevice() : ILLM(), m_convo{std::make_unique<liboai::Conversation>()}, 
+    GPTDevice() : ILLM(), m_convo{std::make_unique<liboai::Conversation>()},
+                            m_function_called{},
                             m_functions{std::make_unique<liboai::Functions>()},
+                            m_convo_length{1},
                             m_offline{false}
     {
     }
@@ -36,9 +44,9 @@ public:
 
     bool readPrompt(std::string &oPrompt) override;
 
-    bool ask(const std::string &question, std::string &oAnswer) override;
+    bool ask(const std::string &question, yarp::dev::LLM_Message &oAnswer) override;
 
-    bool getConversation(std::vector<std::pair<Author, Content>> &oConversation) override;
+    bool getConversation(std::vector<yarp::dev::LLM_Message> &oConversation) override;
 
     bool deleteConversation() noexcept override;
 
@@ -50,6 +58,11 @@ public:
 private:
     // data
     std::unique_ptr<liboai::Conversation> m_convo;
+    std::size_t m_convo_length; //How many messages are in conversation
+
+    // function_call data. Mostly kept to display the full conversation
+    std::map<std::size_t,Answer> m_function_called;
+
     // functions
     std::unique_ptr<liboai::Functions> m_functions;
 
@@ -67,6 +80,9 @@ private:
 
     // sets OpenAI function
     bool setFunctions(const json& function_json);
+
+    const std::string module_name = "GPTDevice";
+
 };
 
 #endif // YARP_GPTDevice_H

@@ -7,9 +7,8 @@ SPDX-License-Identifier: BSD-3-Clause
 <robot name="LLMServer" build="2" portprefix="" xmlns:xi="http://www.w3.org/2001/XInclude">
 	<devices>
 		<device name="LLMDevice" type="GPTDevice">
-			<param name="api_version">muahh</param>
-			<param name="prompt_file">prompt.txt</param>
-			<param name="functions_file">functions.json</param>
+			<param name="prompt_file">prompt_test.txt</param>
+			<param name="functions_file">functions_test.json</param>
 		</device>
 		<device name="LLM_nws" type="LLM_nws_yarp">
 			<param extern-name="LLMNwsYarp_name" name="name">
