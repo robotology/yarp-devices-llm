@@ -34,10 +34,11 @@ bool GPTDevice::open(yarp::os::Searchable &config)
     // Prompt and functions file
     bool has_prompt_file{config.check("prompt_file")};
     yarp::os::ResourceFinder resource_finder;
-    resource_finder.setDefaultContext("GPTDevice");
+    std::string prompt_ctx = config.check("prompt_context",yarp::os::Value("GPTDevice")).asString();
+    resource_finder.setDefaultContext(prompt_ctx);
 
     if(has_prompt_file)
-    {    
+    {
         std::string prompt_file_fullpath = resource_finder.findFile(config.find("prompt_file").asString());
         auto stream = std::ifstream(prompt_file_fullpath);
         if (!stream)
@@ -52,10 +53,12 @@ bool GPTDevice::open(yarp::os::Searchable &config)
             {
                 return false;
             }
-        } 
+        }
     }
 
     bool has_function_file{config.check("functions_file")};
+    std::string json_ctx = config.check("json_context",yarp::os::Value(prompt_ctx)).asString();
+    resource_finder.setDefaultContext(json_ctx);
     if(has_function_file)
     {
         std::string functions_file_fullpath = resource_finder.findFile(config.find("functions_file").asString());
@@ -68,7 +71,7 @@ bool GPTDevice::open(yarp::os::Searchable &config)
         {
             // Read the function file into json format
             // yDebug() << functions_file_fullpath;
-            json function_js = json::parse(stream); 
+            json function_js = json::parse(stream);
             if (!setFunctions(function_js))
             {
                 return false;
@@ -240,7 +243,7 @@ bool GPTDevice::setFunctions(const json& function_json)
 
         std::string function_name = function.value()["name"].template get<std::string>();
         std::string function_desc = function.value()["description"].template get<std::string>();
-        
+
         if(!m_functions->AddFunction(function_name))
         {
             yError() << module_name + "::setFunctions(). Cannot add function.";

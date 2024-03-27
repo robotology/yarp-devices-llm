@@ -9,10 +9,11 @@ bool Module::configure(yarp::os::ResourceFinder& rf)
 {
     // Opening the llm nwc
     std::string remote_rpc = rf.check("remote",yarp::os::Value("/LLM_nws/rpc")).asString();
+    std::string local_rpc = rf.check("local",yarp::os::Value("/LLM_nwc/rpc")).asString();
 
     yarp::os::Property prop;
     prop.put("device","LLM_nwc_yarp");
-    prop.put("local","/LLM_nwc/rpc");
+    prop.put("local",local_rpc);
     prop.put("remote",remote_rpc);
 
     if(!drv_.open(prop))
