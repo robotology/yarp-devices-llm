@@ -9,10 +9,12 @@ bool Module::configure(yarp::os::ResourceFinder& rf)
 {
     // Opening the llm nwc
     std::string remote_rpc = rf.check("remote",yarp::os::Value("/LLM_nws/rpc")).asString();
+    std::string local_name = rf.check("name",yarp::os::Value("GPTDevice")).asString();
+    std::string local_rpc = "/"+local_name+"/LLM_nwc/rpc";
 
     yarp::os::Property prop;
     prop.put("device","LLM_nwc_yarp");
-    prop.put("local","/LLM_nwc/rpc");
+    prop.put("local",local_rpc);
     prop.put("remote",remote_rpc);
 
     if(!drv_.open(prop))
@@ -27,10 +29,10 @@ bool Module::configure(yarp::os::ResourceFinder& rf)
         return EXIT_FAILURE;
     }
 
-    std::string question_port_name = rf.check("in_port",yarp::os::Value("/LLMStream/text:i")).asString();
+    std::string question_port_name = "/"+local_name+"/LLMStream/text:i";
     question_port_.open(question_port_name);
 
-    std::string answer_port_name = rf.check("out_port",yarp::os::Value("/LLMStream/text:o")).asString();
+    std::string answer_port_name = "/"+local_name+"/LLMStream/text:o";
     answer_port_.open(answer_port_name);
 
     return true;
