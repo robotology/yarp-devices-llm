@@ -40,7 +40,7 @@ TEST_CASE("dev::GPTDevice_test", "[yarp::dev]")
             std::string out_prompt;
 
             bool ret = illm->readPrompt(out_prompt);
-            CHECK(!ret); //Prompt is not set yet
+            CHECK_FALSE(ret); //Prompt is not set yet
 
             ret = illm->setPrompt(prompt);
             CHECK(ret);
@@ -53,15 +53,15 @@ TEST_CASE("dev::GPTDevice_test", "[yarp::dev]")
             ret = illm->setPrompt(prompt);
             CHECK(!ret);
 
-            std::string answer;
+            yarp::dev::LLM_Message answer;
             ret = illm->ask("This is a question",answer);
             CHECK(!ret); //If the device is offline ask will not work
 
-            std::vector<std::pair<Author,Content>> out_conversation;
+            std::vector<yarp::dev::LLM_Message> out_conversation;
             ret = illm->getConversation(out_conversation);
             CHECK(ret); //We have the system message
-            CHECK(out_conversation[0].first == "system");
-            CHECK(out_conversation[0].second == prompt);
+            CHECK(out_conversation[0].type == "system");
+            CHECK(out_conversation[0].content == prompt);
 
             ret = illm->deleteConversation();
             CHECK(ret);
@@ -69,13 +69,38 @@ TEST_CASE("dev::GPTDevice_test", "[yarp::dev]")
             // Check that conversation is actually deleted
             ret = illm->getConversation(out_conversation);
             CHECK(!ret);
-
         }
 
         //"Close all polydrivers and check"
         {
             CHECK(dd.close());
         }
+    }
+
+    SECTION("Check GTPDevice functions")
+    {
+        PolyDriver dd;
+        ILLM* illm = nullptr;
+
+        //"Checking opening device with functions"
+        {
+            Property pcfg;
+            pcfg.put("device", "GPTDevice");
+            pcfg.put("functions_file","functions_test.json");
+            REQUIRE(dd.open(pcfg));
+        }
+
+        {
+            dd.view(illm);
+
+            // Since we are in offline mode, we cannot test a proper function call
+        }
+
+        //"Close all polydrivers and check"
+        {
+            CHECK(dd.close());
+        }
+        
     }
 
     Network::setLocalMode(false);

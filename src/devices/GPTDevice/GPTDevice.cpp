@@ -1,15 +1,20 @@
 /*
- * SPDX-FileCopyrightText: 2023 Istituto Italiano di Tecnologia (IIT)
+ * SPDX-FileCopyrightText: 2023-2024 Istituto Italiano di Tecnologia (IIT)
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
 #include <GPTDevice.h>
 #include <yarp/os/LogStream.h>
+#include <yarp/os/ResourceFinder.h>
+#include <fstream>
+#include <string_view>
+
+using json = nlohmann::json;
 
 bool GPTDevice::open(yarp::os::Searchable &config)
 {
     // Azure settings
-    azure_api_version = config.check("api_version", yarp::os::Value("2023-05-15")).asString();
+    azure_api_version = config.check("api_version", yarp::os::Value("2023-07-01-preview")).asString();
     azure_deployment_id = std::getenv("DEPLOYMENT_ID");
     azure_resource = std::getenv("AZURE_RESOURCE");
 
@@ -26,13 +31,62 @@ bool GPTDevice::open(yarp::os::Searchable &config)
         m_offline = true;
     }
 
+    // Prompt and functions file
+    bool has_prompt_file{config.check("prompt_file")};
+    yarp::os::ResourceFinder resource_finder;
+    std::string prompt_ctx = config.check("prompt_context",yarp::os::Value("GPTDevice")).asString();
+    resource_finder.setDefaultContext(prompt_ctx);
+
+    if(has_prompt_file)
+    {
+        std::string prompt_file_fullpath = resource_finder.findFile(config.find("prompt_file").asString());
+        auto stream = std::ifstream(prompt_file_fullpath);
+        if (!stream)
+        {
+            yWarning() << "File:" << prompt_file_fullpath << "does not exist or path is invalid";
+        }
+        else
+        {
+            std::ostringstream sstr;
+            sstr << stream.rdbuf(); //Reads the entire file into the stringstream
+            if(!setPrompt(sstr.str()))
+            {
+                return false;
+            }
+        }
+    }
+
+    bool has_function_file{config.check("functions_file")};
+    std::string json_ctx = config.check("json_context",yarp::os::Value(prompt_ctx)).asString();
+    resource_finder.setDefaultContext(json_ctx);
+    if(has_function_file)
+    {
+        std::string functions_file_fullpath = resource_finder.findFile(config.find("functions_file").asString());
+        auto stream = std::ifstream(functions_file_fullpath);
+        if (!stream)
+        {
+            yWarning() << "File: " << functions_file_fullpath << "does not exist or path is invalid.";
+        }
+        else
+        {
+            // Read the function file into json format
+            // yDebug() << functions_file_fullpath;
+            json function_js = json::parse(stream);
+            if (!setFunctions(function_js))
+            {
+                return false;
+            }
+        }
+    }
+
     return true;
 }
 
-bool GPTDevice::ask(const std::string &question, std::string &oAnswer)
+bool GPTDevice::ask(const std::string &question, yarp::dev::LLM_Message &oAnswer)
 {
     // Adding prompt to conversation
     m_convo->AddUserData(question);
+    m_convo_length += 1;
 
     if (m_offline)
     {
@@ -54,7 +108,40 @@ bool GPTDevice::ask(const std::string &question, std::string &oAnswer)
         return false;
     }
 
-    oAnswer = m_convo->GetLastResponse();
+    if(m_convo->LastResponseIsFunctionCall())
+    {
+        yDebug() << "Last answer was function call";
+        auto str_args = m_convo->GetLastFunctionCallArguments();
+        std::string function_call_name = m_convo->GetLastFunctionCallName();
+        auto j_args = json::parse(str_args);
+
+        std::vector<std::string> parameters_list;
+        std::vector<std::string> arguments_list;
+
+        for(const auto&[key,val]: j_args.items())
+        {
+            parameters_list.push_back(key);
+            arguments_list.push_back(val);
+        }
+
+        auto function_call_message = yarp::dev::LLM_Message{"function",
+                                        function_call_name,
+                                        parameters_list,
+                                        arguments_list};
+
+        m_function_called.insert({m_convo_length,function_call_message});
+
+        oAnswer = function_call_message;
+    }
+    else
+    {
+        oAnswer = yarp::dev::LLM_Message{"user",
+                                            m_convo->GetLastResponse(),
+                                            std::vector<std::string>(),
+                                            std::vector<std::string>()};
+    }
+
+    m_convo_length+=1;
     return true;
 }
 
@@ -94,16 +181,15 @@ bool GPTDevice::readPrompt(std::string &oPrompt)
         }
     }
 
-    yWarning() << "No system message was found. Set it with setPrompt(string)";
-
     return false;
 }
 
-bool GPTDevice::getConversation(std::vector<std::pair<Author, Content>> &oConversation)
+bool GPTDevice::getConversation(std::vector<yarp::dev::LLM_Message> &oConversation)
 {
-    std::vector<std::pair<std::string, std::string>> conversation;
+    std::vector<yarp::dev::LLM_Message> conversation;
 
     auto &convo_json = m_convo->GetJSON();
+
 
     if (convo_json["messages"].empty())
     {
@@ -113,10 +199,17 @@ bool GPTDevice::getConversation(std::vector<std::pair<Author, Content>> &oConver
 
     for (auto &message : convo_json["messages"])
     {
-        std::string role = message["role"].get<std::string>();
+        std::string type = message["role"].get<std::string>();
         std::string content = message["content"].get<std::string>();
 
-        conversation.push_back(std::make_pair(role, content));
+        conversation.push_back(yarp::dev::LLM_Message{type, content,std::vector<std::string>(),std::vector<std::string>()});
+    }
+
+    // Adding function calls to the conversation
+    for(const auto& [i,answer]: m_function_called)
+    {
+        auto conv_it = conversation.begin();
+        conversation.insert(std::next(conv_it,i),answer);
     }
 
     oConversation = conversation;
@@ -125,12 +218,69 @@ bool GPTDevice::getConversation(std::vector<std::pair<Author, Content>> &oConver
 
 bool GPTDevice::deleteConversation() noexcept
 {
-    // Api does not provide a method to empty the conversation: we are better of if we rebuild an object from scratch
+    // Api does not provide a method to empty the conversation: we are better off if we rebuild an object from scratch
     m_convo.reset(new liboai::Conversation());
+    m_convo_length = 0;
+    m_function_called.clear();
     return true;
 }
 
 bool GPTDevice::close()
 {
+    return true;
+}
+
+bool GPTDevice::setFunctions(const json& function_json)
+{
+
+    for (auto& function: function_json.items())
+    {
+        if(!function.value().contains("name") || !function.value().contains("description"))
+        {
+            yError() << "Function missing mandatory parameters <name> and/or <description>";
+            return false;
+        }
+
+        std::string function_name = function.value()["name"].template get<std::string>();
+        std::string function_desc = function.value()["description"].template get<std::string>();
+
+        if(!m_functions->AddFunction(function_name))
+        {
+            yError() << module_name + "::setFunctions(). Cannot add function.";
+            return false;
+        }
+
+        if(!m_functions->SetDescription(function_name,function_desc))
+        {
+            yError() << module_name + "::setFunctions(). Cannot set description";
+            return false;
+        }
+
+        if(function.value().contains("parameters"))
+        {
+            auto parameters = function.value()["parameters"]["properties"];
+            std::vector<liboai::Functions::FunctionParameter> parameters_vec;
+            for(auto& params: parameters.items())
+            {
+                liboai::Functions::FunctionParameter param;
+                param.name = params.key();
+                param.description = params.value()["description"];
+                param.type = params.value()["type"];
+                parameters_vec.push_back(param);
+            }
+            if(!m_functions->SetParameters(function_name,parameters_vec))
+            {
+                yError() << module_name + "::setFunction(). Cannot set parameters";
+                return false;
+            }
+        }
+    }
+
+    if(!m_convo->SetFunctions(*m_functions))
+    {
+        yError() << module_name + "::setFunction(). Cannot set function";
+        return false;
+    }
+
     return true;
 }
