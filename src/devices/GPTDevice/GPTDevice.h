@@ -50,6 +50,8 @@ public:
 
     bool deleteConversation() noexcept override;
 
+    bool refreshConversation() noexcept override;
+
     // Device initialization
     bool open(yarp::os::Searchable &config) override;
 

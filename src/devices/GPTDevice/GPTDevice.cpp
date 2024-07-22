@@ -225,6 +225,15 @@ bool GPTDevice::deleteConversation() noexcept
     return true;
 }
 
+bool GPTDevice::refreshConversation() noexcept
+{
+    std::string current_prompt = "";
+    this->readPrompt(current_prompt);
+    this->deleteConversation();
+    this->setPrompt(current_prompt);
+    return true;
+}
+
 bool GPTDevice::close()
 {
     return true;

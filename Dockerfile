@@ -45,8 +45,8 @@ ENV PYTHONPATH=/usr/local/lib/python3/dist-packages
 # Install yarp
 RUN cd robotology && git clone https://github.com/robotology/yarp.git && \
     cd yarp && git remote add fbrand-new https://github.com/fbrand-new/yarp.git && \
-    git fetch fbrand-new feat/gpt_functions && \
-    git checkout fbrand-new/feat/gpt_functions && \
+    git fetch fbrand-new feat/llm_refresh_conv && \
+    git checkout fbrand-new/feat/llm_refresh_conv && \
     mkdir build && cd build \ 
     && cmake .. \
     && make -j8 && sudo make install && \
