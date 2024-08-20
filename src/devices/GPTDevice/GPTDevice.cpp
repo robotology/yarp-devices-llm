@@ -135,7 +135,7 @@ bool GPTDevice::ask(const std::string &question, yarp::dev::LLM_Message &oAnswer
     }
     else
     {
-        oAnswer = yarp::dev::LLM_Message{"user",
+        oAnswer = yarp::dev::LLM_Message{"assistant",
                                             m_convo->GetLastResponse(),
                                             std::vector<std::string>(),
                                             std::vector<std::string>()};
