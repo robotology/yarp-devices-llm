@@ -44,9 +44,7 @@ ENV PYTHONPATH=/usr/local/lib/python3/dist-packages
 
 # Install yarp
 RUN cd robotology && git clone https://github.com/robotology/yarp.git && \
-    cd yarp && git remote add fbrand-new https://github.com/fbrand-new/yarp.git && \
-    git fetch fbrand-new feat/gpt_functions && \
-    git checkout fbrand-new/feat/gpt_functions && \
+    cd yarp && \
     mkdir build && cd build \ 
     && cmake .. \
     && make -j8 && sudo make install && \
@@ -60,11 +58,7 @@ RUN git clone https://github.com/Microsoft/vcpkg.git && \
 
 # Install openai c++ community library
 RUN git clone https://github.com/D7EAD/liboai.git && \
-    cd liboai && \
-    git remote add fbrand-new https://github.com/fbrand-new/liboai.git && \
-    git fetch fbrand-new v4.0.0-dev && \
-    git checkout fbrand-new/v4.0.0-dev && \
-    cd liboai && \
+    cd liboai/liboai && \
     cmake -B build -S . -DCMAKE_TOOLCHAIN_FILE=/home/user/vcpkg/scripts/buildsystems/vcpkg.cmake \
     -DCMAKE_POSITION_INDEPENDENT_CODE=true && \
     cd build && make -j8 && sudo make install

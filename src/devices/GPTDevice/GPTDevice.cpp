@@ -135,7 +135,7 @@ bool GPTDevice::ask(const std::string &question, yarp::dev::LLM_Message &oAnswer
     }
     else
     {
-        oAnswer = yarp::dev::LLM_Message{"user",
+        oAnswer = yarp::dev::LLM_Message{"assistant",
                                             m_convo->GetLastResponse(),
                                             std::vector<std::string>(),
                                             std::vector<std::string>()};
@@ -222,6 +222,15 @@ bool GPTDevice::deleteConversation() noexcept
     m_convo.reset(new liboai::Conversation());
     m_convo_length = 0;
     m_function_called.clear();
+    return true;
+}
+
+bool GPTDevice::refreshConversation() noexcept
+{
+    std::string current_prompt = "";
+    this->readPrompt(current_prompt);
+    this->deleteConversation();
+    this->setPrompt(current_prompt);
     return true;
 }
 
