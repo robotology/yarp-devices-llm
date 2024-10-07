@@ -11,6 +11,10 @@ bool Module::configure(yarp::os::ResourceFinder& rf)
     std::string remote_rpc = rf.check("remote",yarp::os::Value("/LLM_nws/rpc")).asString();
     std::string local_name = rf.check("name",yarp::os::Value("GPTDevice")).asString();
     std::string local_rpc = "/"+local_name+"/LLM_nwc/rpc";
+    if(rf.check("stream_answer_only"))
+    {
+        m_stream_answer_only = rf.find("stream_answer_only").asInt32() == 1;
+    }
 
     yarp::os::Property prop;
     prop.put("device","LLM_nwc_yarp");
@@ -52,7 +56,15 @@ bool Module::updateModule()
 
         auto& res = answer_port_.prepare();
         res.clear();
-        res.copyPortable(answer,res);
+        if(m_stream_answer_only)
+        {
+            res.addString(answer.content);
+        }
+        else
+        {
+            res.copyPortable(answer,res);
+        }
+
         // res.add(answer);
         // res.addString(answer);
         answer_port_.write();

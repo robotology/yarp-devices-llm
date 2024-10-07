@@ -25,6 +25,7 @@ class Module : public yarp::os::RFModule
         yarp::os::BufferedPort<yarp::os::Bottle> answer_port_;
         yarp::dev::PolyDriver drv_;
         yarp::dev::ILLM* illm_;
+        bool m_stream_answer_only{false};
 };
 
 #endif
