@@ -100,7 +100,7 @@ TEST_CASE("dev::GPTDevice_test", "[yarp::dev]")
         {
             CHECK(dd.close());
         }
-        
+
     }
 
     Network::setLocalMode(false);
