@@ -75,7 +75,7 @@ jobs:
         # Compilation related dependencies
         conda install cmake compilers make ninja pkg-config
         # Actual dependencies
-        conda install -c conda-forge -c robostack-staging ycm-cmake-modules eigen ace sqlite nlohmann_json
+        conda install -c conda-forge -c robostack-staging ycm-cmake-modules eigen ace sqlite nlohmann_json libpsl
 
 
     - name: Download YARP [Linux&macOS]
@@ -248,7 +248,7 @@ jobs:
         conda install cmake compilers make ninja pkg-config
         # Actual dependencies
         sudo apt update && sudo apt-get install -qq -y libc6-dbg
-        conda install -c conda-forge -c robostack-staging ycm-cmake-modules eigen valgrind ace sqlite nlohmann_json
+        conda install -c conda-forge -c robostack-staging ycm-cmake-modules eigen valgrind ace sqlite nlohmann_json libpsl
 
     - name: Download YARP [Linux&macOS]
       if: contains(matrix.os, 'macos') || contains(matrix.os, 'ubuntu')
