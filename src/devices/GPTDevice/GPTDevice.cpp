@@ -82,7 +82,7 @@ bool GPTDevice::open(yarp::os::Searchable &config)
     return true;
 }
 
-bool GPTDevice::ask(const std::string &question, yarp::dev::LLM_Message &oAnswer)
+yarp::dev::ReturnValue GPTDevice::ask(const std::string &question, yarp::dev::LLM_Message &oAnswer)
 {
     // Adding prompt to conversation
     m_convo->AddUserData(question);
@@ -91,7 +91,7 @@ bool GPTDevice::ask(const std::string &question, yarp::dev::LLM_Message &oAnswer
     if (m_offline)
     {
         yWarning() << "Device in offline mode";
-        return false;
+        return yarp::dev::ReturnValue::return_code::return_value_error_method_failed;
     }
 
     // Asking gpt for an answer
@@ -105,7 +105,7 @@ bool GPTDevice::ask(const std::string &question, yarp::dev::LLM_Message &oAnswer
     catch (const std::exception &e)
     {
         yError() << e.what() << '\n';
-        return false;
+        return yarp::dev::ReturnValue::return_code::return_value_error_method_failed;
     }
 
     if(m_convo->LastResponseIsFunctionCall())
@@ -142,10 +142,10 @@ bool GPTDevice::ask(const std::string &question, yarp::dev::LLM_Message &oAnswer
     }
 
     m_convo_length+=1;
-    return true;
+    return yarp::dev::ReturnValue_ok;
 }
 
-bool GPTDevice::setPrompt(const std::string &prompt)
+yarp::dev::ReturnValue GPTDevice::setPrompt(const std::string &prompt)
 {
 
     std::string aPrompt;
@@ -153,7 +153,7 @@ bool GPTDevice::setPrompt(const std::string &prompt)
     if(readPrompt(aPrompt))
     {
         yError() << "A prompt is already set. You must delete conversation first";
-        return false;
+        return yarp::dev::ReturnValue::return_code::return_value_error_method_failed;
     }
 
     try
@@ -163,13 +163,13 @@ bool GPTDevice::setPrompt(const std::string &prompt)
     catch (const std::exception &e)
     {
         yError() << e.what() << '\n';
-        return false;
+        return yarp::dev::ReturnValue::return_code::return_value_error_method_failed;
     }
 
-    return true;
+    return yarp::dev::ReturnValue_ok;
 }
 
-bool GPTDevice::readPrompt(std::string &oPrompt)
+yarp::dev::ReturnValue GPTDevice::readPrompt(std::string &oPrompt)
 {
     auto &convo_json = m_convo->GetJSON();
     for (auto &message : convo_json["messages"])
@@ -177,14 +177,14 @@ bool GPTDevice::readPrompt(std::string &oPrompt)
         if (message["role"] == "system")
         {
             oPrompt = message["content"];
-            return true;
+            return yarp::dev::ReturnValue_ok;
         }
     }
 
-    return false;
+    return yarp::dev::ReturnValue::return_code::return_value_error_method_failed;
 }
 
-bool GPTDevice::getConversation(std::vector<yarp::dev::LLM_Message> &oConversation)
+yarp::dev::ReturnValue GPTDevice::getConversation(std::vector<yarp::dev::LLM_Message> &oConversation)
 {
     std::vector<yarp::dev::LLM_Message> conversation;
 
@@ -194,7 +194,7 @@ bool GPTDevice::getConversation(std::vector<yarp::dev::LLM_Message> &oConversati
     if (convo_json["messages"].empty())
     {
         yWarning() << "Conversation is empty!";
-        return false;
+        return yarp::dev::ReturnValue::return_code::return_value_error_method_failed;
     }
 
     for (auto &message : convo_json["messages"])
@@ -213,25 +213,25 @@ bool GPTDevice::getConversation(std::vector<yarp::dev::LLM_Message> &oConversati
     }
 
     oConversation = conversation;
-    return true;
+    return yarp::dev::ReturnValue_ok;
 }
 
-bool GPTDevice::deleteConversation() noexcept
+yarp::dev::ReturnValue GPTDevice::deleteConversation() noexcept
 {
     // Api does not provide a method to empty the conversation: we are better off if we rebuild an object from scratch
     m_convo.reset(new liboai::Conversation());
     m_convo_length = 0;
     m_function_called.clear();
-    return true;
+    return yarp::dev::ReturnValue_ok;
 }
 
-bool GPTDevice::refreshConversation() noexcept
+yarp::dev::ReturnValue GPTDevice::refreshConversation() noexcept
 {
     std::string current_prompt = "";
     this->readPrompt(current_prompt);
     this->deleteConversation();
     this->setPrompt(current_prompt);
-    return true;
+    return yarp::dev::ReturnValue_ok;
 }
 
 bool GPTDevice::close()

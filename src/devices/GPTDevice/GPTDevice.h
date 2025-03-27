@@ -40,17 +40,17 @@ public:
     ~GPTDevice() override = default;
 
     // Rpc methods
-    bool setPrompt(const std::string &prompt) override;
+    yarp::dev::ReturnValue setPrompt(const std::string &prompt) override;
 
-    bool readPrompt(std::string &oPrompt) override;
+    yarp::dev::ReturnValue readPrompt(std::string &oPrompt) override;
 
-    bool ask(const std::string &question, yarp::dev::LLM_Message &oAnswer) override;
+    yarp::dev::ReturnValue ask(const std::string &question, yarp::dev::LLM_Message &oAnswer) override;
 
-    bool getConversation(std::vector<yarp::dev::LLM_Message> &oConversation) override;
+    yarp::dev::ReturnValue getConversation(std::vector<yarp::dev::LLM_Message> &oConversation) override;
 
-    bool deleteConversation() noexcept override;
+    yarp::dev::ReturnValue deleteConversation() noexcept override;
 
-    bool refreshConversation() noexcept override;
+    yarp::dev::ReturnValue refreshConversation() noexcept override;
 
     // Device initialization
     bool open(yarp::os::Searchable &config) override;
