@@ -9,41 +9,47 @@
 #include <fstream>
 #include <string_view>
 
+YARP_LOG_COMPONENT(GPTDEVICE, "yarp.device.GPTDevice", yarp::os::Log::TraceType);
+
 using json = nlohmann::json;
 
 bool GPTDevice::open(yarp::os::Searchable &config)
 {
+    if (!parseParams(config))
+    {
+        yCError(GPTDEVICE) << "Failed to parse parameters";
+        return false;
+    }
+
     // Azure settings
-    azure_api_version = config.check("api_version", yarp::os::Value("2023-07-01-preview")).asString();
     azure_deployment_id = std::getenv("DEPLOYMENT_ID");
     azure_resource = std::getenv("AZURE_RESOURCE");
 
     if (!azure_resource)
     {
-        yWarning() << "Could not read env variable AZURE_RESOURCE. Device set in offline mode";
+        yCWarning(GPTDEVICE) << "Could not read env variable AZURE_RESOURCE. Device set in offline mode";
         m_offline = true;
         return true;
     }
 
     if (!oai.auth.SetAzureKeyEnv("AZURE_API_KEY"))
     {
-        yWarning() << "Invalid or no azure key provided. Device set in offline mode.";
+        yCWarning(GPTDEVICE) << "Invalid or no azure key provided. Device set in offline mode.";
         m_offline = true;
     }
 
     // Prompt and functions file
-    bool has_prompt_file{config.check("prompt_file")};
+    bool has_prompt_file{m_prompt_file != ""};
     yarp::os::ResourceFinder resource_finder;
-    std::string prompt_ctx = config.check("prompt_context",yarp::os::Value("GPTDevice")).asString();
-    resource_finder.setDefaultContext(prompt_ctx);
+    resource_finder.setDefaultContext(m_prompt_context);
 
     if(has_prompt_file)
     {
-        std::string prompt_file_fullpath = resource_finder.findFile(config.find("prompt_file").asString());
+        std::string prompt_file_fullpath = resource_finder.findFile(m_prompt_file);
         auto stream = std::ifstream(prompt_file_fullpath);
         if (!stream)
         {
-            yWarning() << "File:" << prompt_file_fullpath << "does not exist or path is invalid";
+            yCWarning(GPTDEVICE) << "File:" << prompt_file_fullpath << "does not exist or path is invalid";
         }
         else
         {
@@ -56,21 +62,20 @@ bool GPTDevice::open(yarp::os::Searchable &config)
         }
     }
 
-    bool has_function_file{config.check("functions_file")};
-    std::string json_ctx = config.check("json_context",yarp::os::Value(prompt_ctx)).asString();
-    resource_finder.setDefaultContext(json_ctx);
+    bool has_function_file{m_function_file != ""};
+    resource_finder.setDefaultContext(m_json_context);
     if(has_function_file)
     {
-        std::string functions_file_fullpath = resource_finder.findFile(config.find("functions_file").asString());
+        std::string functions_file_fullpath = resource_finder.findFile(m_function_file);
         auto stream = std::ifstream(functions_file_fullpath);
         if (!stream)
         {
-            yWarning() << "File: " << functions_file_fullpath << "does not exist or path is invalid.";
+            yCWarning(GPTDEVICE) << "File: " << functions_file_fullpath << "does not exist or path is invalid.";
         }
         else
         {
             // Read the function file into json format
-            // yDebug() << functions_file_fullpath;
+            // yCDebug(GPTDEVICE) << functions_file_fullpath;
             json function_js = json::parse(stream);
             if (!setFunctions(function_js))
             {
@@ -90,7 +95,7 @@ yarp::dev::ReturnValue GPTDevice::ask(const std::string &question, yarp::dev::LL
 
     if (m_offline)
     {
-        yWarning() << "Device in offline mode";
+        yCWarning(GPTDEVICE) << "Device in offline mode";
         return yarp::dev::ReturnValue::return_code::return_value_error_method_failed;
     }
 
@@ -98,19 +103,19 @@ yarp::dev::ReturnValue GPTDevice::ask(const std::string &question, yarp::dev::LL
     try
     {
         liboai::Response res = oai.Azure->create_chat_completion(
-            azure_resource, azure_deployment_id, azure_api_version,
+            azure_resource, azure_deployment_id, m_api_version,
             *m_convo);
         m_convo->Update(res);
     }
     catch (const std::exception &e)
     {
-        yError() << e.what() << '\n';
+        yCError(GPTDEVICE) << e.what() << '\n';
         return yarp::dev::ReturnValue::return_code::return_value_error_method_failed;
     }
 
     if(m_convo->LastResponseIsFunctionCall())
     {
-        yDebug() << "Last answer was function call";
+        yCDebug(GPTDEVICE) << "Last answer was function call";
         auto str_args = m_convo->GetLastFunctionCallArguments();
         std::string function_call_name = m_convo->GetLastFunctionCallName();
         auto j_args = json::parse(str_args);
@@ -152,7 +157,7 @@ yarp::dev::ReturnValue GPTDevice::setPrompt(const std::string &prompt)
 
     if(readPrompt(aPrompt))
     {
-        yError() << "A prompt is already set. You must delete conversation first";
+        yCError(GPTDEVICE) << "A prompt is already set. You must delete conversation first";
         return yarp::dev::ReturnValue::return_code::return_value_error_method_failed;
     }
 
@@ -162,7 +167,7 @@ yarp::dev::ReturnValue GPTDevice::setPrompt(const std::string &prompt)
     }
     catch (const std::exception &e)
     {
-        yError() << e.what() << '\n';
+        yCError(GPTDEVICE) << e.what() << '\n';
         return yarp::dev::ReturnValue::return_code::return_value_error_method_failed;
     }
 
@@ -193,7 +198,7 @@ yarp::dev::ReturnValue GPTDevice::getConversation(std::vector<yarp::dev::LLM_Mes
 
     if (convo_json["messages"].empty())
     {
-        yWarning() << "Conversation is empty!";
+        yCWarning(GPTDEVICE) << "Conversation is empty!";
         return yarp::dev::ReturnValue::return_code::return_value_error_method_failed;
     }
 
@@ -246,7 +251,7 @@ bool GPTDevice::setFunctions(const json& function_json)
     {
         if(!function.value().contains("name") || !function.value().contains("description"))
         {
-            yError() << "Function missing mandatory parameters <name> and/or <description>";
+            yCError(GPTDEVICE) << "Function missing mandatory parameters <name> and/or <description>";
             return false;
         }
 
@@ -255,13 +260,13 @@ bool GPTDevice::setFunctions(const json& function_json)
 
         if(!m_functions->AddFunction(function_name))
         {
-            yError() << module_name + "::setFunctions(). Cannot add function.";
+            yCError(GPTDEVICE) << module_name + "::setFunctions(). Cannot add function.";
             return false;
         }
 
         if(!m_functions->SetDescription(function_name,function_desc))
         {
-            yError() << module_name + "::setFunctions(). Cannot set description";
+            yCError(GPTDEVICE) << module_name + "::setFunctions(). Cannot set description";
             return false;
         }
 
@@ -279,7 +284,7 @@ bool GPTDevice::setFunctions(const json& function_json)
             }
             if(!m_functions->SetParameters(function_name,parameters_vec))
             {
-                yError() << module_name + "::setFunction(). Cannot set parameters";
+                yCError(GPTDEVICE) << module_name + "::setFunction(). Cannot set parameters";
                 return false;
             }
         }
@@ -287,7 +292,7 @@ bool GPTDevice::setFunctions(const json& function_json)
 
     if(!m_convo->SetFunctions(*m_functions))
     {
-        yError() << module_name + "::setFunction(). Cannot set function";
+        yCError(GPTDEVICE) << module_name + "::setFunction(). Cannot set function";
         return false;
     }
 

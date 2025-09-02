@@ -14,14 +14,28 @@
 #include <nlohmann/json.hpp>
 #include <map>
 
+#include "GPTDevice_ParamsParser.h"
+
 using json = nlohmann::json;
 
 using Question = std::string;
 using Answer = yarp::dev::LLM_Message;
 // using Answer = std::tuple<std::string,std::vector<std::string>,std::vector<std::string>>;
 
+/**
+ *  @ingroup dev_impl_other
+ *
+ * \section GPTDevice
+ *
+ * \brief `GPTDevice`: A yarp device for interacting with the GPT model
+ *
+ *  Parameters required by this device are described in class GPTDevice_ParamsParser
+ *
+ */
+
 class GPTDevice : public yarp::dev::ILLM,
-                  public yarp::dev::DeviceDriver
+                  public yarp::dev::DeviceDriver,
+                  public GPTDevice_ParamsParser
 {
 public:
     GPTDevice() : ILLM(), m_convo{std::make_unique<liboai::Conversation>()},
