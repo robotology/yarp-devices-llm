@@ -13,11 +13,14 @@ find_package(nlohmann_json CONFIG REQUIRED)
 
 if(NOT SKIP_GPTDevice)
   yarp_add_plugin(yarp_GPTDevice)
+  generateDeviceParamsParser(GPTDevice GPTDevice)
 
   target_sources(yarp_GPTDevice
     PRIVATE
       GPTDevice.cpp
       GPTDevice.h
+      GPTDevice_ParamsParser.cpp
+      GPTDevice_ParamsParser.h
   )
 
   cmake_path(SET LIBOAI_INCLUDE_PATH "${LIBOAI_INSTALL_PATH}/liboai/include")
