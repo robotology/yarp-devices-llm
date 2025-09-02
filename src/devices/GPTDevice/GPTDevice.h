@@ -85,7 +85,6 @@ private:
     // configuration
     char *azure_resource;
     char *azure_deployment_id;
-    std::string azure_api_version;
     liboai::OpenAI oai;
 
     // offline mode for testing purpouses
